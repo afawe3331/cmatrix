@@ -1,7 +1,7 @@
 class Cmatrix < Formula
   desc "Console Matrix (astyfoo fork)"
-  homepage "https://github.com/yourusername/cmatrix"
-  head "https://github.com/yourusername/cmatrix.git", branch: "master"
+  homepage "https://github.com/afawe3331/cmatrix"
+  head "https://github.com/afawe3331/cmatrix.git", branch: "master"
   license "GPL-3.0-or-later"
 
   depends_on "autoconf" => :build
