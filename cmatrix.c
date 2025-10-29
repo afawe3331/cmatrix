@@ -23,6 +23,7 @@
 
 #define NCURSES_WIDECHAR 1
 
+#include <wchar.h>
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -77,7 +78,7 @@
 
 /* Matrix typedef */
 typedef struct cmatrix {
-    int val;
+    wchar_t val;      // 기존 int → wchar_t
     bool is_head;
 } cmatrix;
 
@@ -682,14 +683,14 @@ if (console) {
                             if (((int) rand() % 3) == 1) {
                                 matrix[0][j].val = 0;
                             } else {
-                                matrix[0][j].val = (int) rand() % randnum + randmin;
+                                matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
                             }
                             spaces[j] = (int) rand() % LINES + 1;
                         }
                     } else if (random > highnum && matrix[1][j].val != 1) {
                         matrix[0][j].val = ' ';
                     } else {
-                        matrix[0][j].val = (int) rand() % randnum + randmin;
+                        matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
                     }
 
                 } else { /* New style scrolling (default) */
@@ -699,7 +700,7 @@ if (console) {
                     } else if (matrix[0][j].val == -1
                         && matrix[1][j].val == ' ') {
                         length[j] = (int) rand() % (LINES - 3) + 3;
-                        matrix[0][j].val = (int) rand() % randnum + randmin;
+                        matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
 
                         spaces[j] = (int) rand() % LINES + 1;
                     }
@@ -726,7 +727,7 @@ if (console) {
                             matrix[i][j].is_head = false;
                             if (changes) {
                                 if (rand() % 8 == 0)
-                                    matrix[i][j].val = (int) rand() % randnum + randmin;
+                                    matrix[i][j].val = (wchar_t)(rand() % randnum + randmin);
                             }
                             i++;
                             y++;
@@ -737,7 +738,7 @@ if (console) {
                             continue;
                         }
 
-                        matrix[i][j].val = (int) rand() % randnum + randmin;
+                        matrix[i][j].val = (wchar_t)(rand() % randnum + randmin);
                         matrix[i][j].is_head = true;
 
                         /* If we're at the top of the column and it's reached its
