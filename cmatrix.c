@@ -684,6 +684,9 @@ if (console) {
                                 matrix[0][j].val = 0;
                             } else {
                                 matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
+                                if (matrix[0][j].val >= 12439 && matrix[0][j].val <= 12446) {
+                        matrix[0][j].val = matrix[0][j].val - 6;
+                        }
                             }
                             spaces[j] = (int) rand() % LINES + 1;
                         }
@@ -691,6 +694,9 @@ if (console) {
                         matrix[0][j].val = ' ';
                     } else {
                         matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
+                        if (matrix[0][j].val >= 12439 && matrix[0][j].val <= 12446) {
+                        matrix[0][j].val = matrix[0][j].val - 6;
+                        }
                     }
 
                 } else { /* New style scrolling (default) */
@@ -701,6 +707,9 @@ if (console) {
                         && matrix[1][j].val == ' ') {
                         length[j] = (int) rand() % (LINES - 3) + 3;
                         matrix[0][j].val = (wchar_t)(rand() % randnum + randmin);
+                        if (matrix[0][j].val >= 12439 && matrix[0][j].val <= 12446) {
+                        matrix[0][j].val = matrix[0][j].val - 6;
+                        }
 
                         spaces[j] = (int) rand() % LINES + 1;
                     }
@@ -728,6 +737,9 @@ if (console) {
                             if (changes) {
                                 if (rand() % 8 == 0)
                                     matrix[i][j].val = (wchar_t)(rand() % randnum + randmin);
+                                if (matrix[i][j].val >= 12439 && matrix[i][j].val <= 12446) {
+                        matrix[i][j].val = matrix[i][j].val - 6;
+                        }
                             }
                             i++;
                             y++;
@@ -739,6 +751,14 @@ if (console) {
                         }
 
                         matrix[i][j].val = (wchar_t)(rand() % randnum + randmin);
+                        if (matrix[i][j].val >= 12439 && matrix[i][j].val <= 12446) {
+                        matrix[i][j].val = matrix[i][j].val - 6;
+                        }
+
+                        if (matrix[i][j].val >= 12439 && matrix[i][j].val <= 12446) {
+                        matrix[i][j].val = matrix[i][j].val - 6;
+                        }
+
                         matrix[i][j].is_head = true;
 
                         /* If we're at the top of the column and it's reached its
