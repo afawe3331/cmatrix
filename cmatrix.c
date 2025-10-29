@@ -93,6 +93,28 @@ int *updates = NULL; /* What does this do again? */
 volatile sig_atomic_t signal_status = 0; /* Indicates a caught signal */
 #endif
 
+/* Custom word/sentence mode */
+static char *word_chars = NULL;
+static int word_len = 0;
+static int *word_pos = NULL; /* Per-column index into word_chars */
+
+static inline int get_matrix_char_for_col(int col, int randmin, int randnum) {
+    if (word_chars != NULL && word_len > 0 && word_pos != NULL) {
+        int iter = 0;
+        while (iter < word_len) {
+            int pos = word_pos[col];
+            unsigned char ch = (unsigned char)word_chars[pos];
+            word_pos[col] = (pos + 1) % word_len;
+            iter++;
+            if (ch != ' ' && ch != '\t' && ch != '\n' && ch != '\r') {
+                return (int)ch;
+            }
+        }
+        /* All characters in text are whitespace; fall back to random to keep density */
+    }
+    return (int) rand() % randnum + randmin;
+}
+
 int va_system(char *str, ...) {
 
     va_list ap;
@@ -147,7 +169,7 @@ void c_die(char *msg, ...) {
 }
 
 void usage(void) {
-    printf(" Usage: cmatrix -[abBcfhlsmVxk] [-u delay] [-C color] [-t tty] [-M message]\n");
+    printf(" Usage: cmatrix -[abBcfhlsmVxk] [-u delay] [-C color] [-t tty] [-M message] [-w text]\n");
     printf(" -a: Asynchronous scroll\n");
     printf(" -b: Bold characters on\n");
     printf(" -B: All bold characters (overrides -b)\n");
@@ -168,8 +190,7 @@ void usage(void) {
     printf(" -m: lambda mode\n");
     printf(" -k: Characters change while scrolling. (Works without -o opt.)\n");
     printf(" -t [tty]: Set tty to use\n");
-    printf(" -U [charset]: Use given charset\n");
-
+    printf(" -w [text]: Use provided text for falling characters (alias: -word [text])\n");
 }
 
 void version(void) {
@@ -220,6 +241,14 @@ void var_init() {
         free(updates);
     }
     updates = nmalloc(COLS * sizeof(int));
+
+    if (word_pos != NULL) {
+        free(word_pos);
+    }
+    word_pos = nmalloc(COLS * sizeof(int));
+    for (j = 0; j < COLS; ++j) {
+        word_pos[j] = (word_len > 0) ? (rand() % word_len) : 0;
+    }
 
     /* Make the matrix */
     for (i = 0; i <= LINES; i++) {
@@ -312,14 +341,6 @@ void resize_screen(void) {
     refresh();
 }
 
-char *charset = NULL;
-int charsetlen;
-
-int randomchar(int randnum, int randmin, int customcharset) {
-    if (customcharset) return charset[(int) rand() % charsetlen];
-    else return (int) rand() % randnum + randmin;
-}
-
 int main(int argc, char *argv[]) {
     int i, y, z, optchr, keypress;
     int j = 0;
@@ -341,7 +362,6 @@ int main(int argc, char *argv[]) {
     int pause = 0;
     int classic = 0;
     int changes = 0;
-    int customcharset = 0;
     char *msg = "";
     char *tty = NULL;
 
@@ -349,8 +369,14 @@ int main(int argc, char *argv[]) {
     setlocale(LC_ALL, "");
 
     /* Many thanks to morph- (morph@jmss.com) for this getopt patch */
+    /* Map legacy/alias option "-word" to "-w" for convenience */
+    for (i = 1; i < argc; ++i) {
+        if (argv[i] && strcmp(argv[i], "-word") == 0) {
+            argv[i] = "-w";
+        }
+    }
     opterr = 0;
-    while ((optchr = getopt(argc, argv, "abBcfhlLnrosmxkVM:u:C:t:U:")) != EOF) {
+    while ((optchr = getopt(argc, argv, "abBcfhlLnrosmxkVM:u:C:t:w:")) != EOF) {
         switch (optchr) {
         case 's':
             screensaver = 1;
@@ -439,12 +465,15 @@ int main(int argc, char *argv[]) {
         case 't':
             tty = optarg;
             break;
-	case 'U':
-	    charset = optarg;
-	    charsetlen = strlen(charset);
-	    customcharset = 1;
+        case 'w':
+            if (optarg && optarg[0] != '\0') {
+                word_chars = strdup(optarg);
+                word_len = (int)strlen(word_chars);
+            } else {
+                word_chars = NULL;
+                word_len = 0;
+            }
             break;
-
         }
     }
 
@@ -699,14 +728,14 @@ if (console) {
                             if (((int) rand() % 3) == 1) {
                                 matrix[0][j].val = 0;
                             } else {
-                                matrix[0][j].val = randomchar(randnum, randmin, customcharset);
+                                matrix[0][j].val = get_matrix_char_for_col(j, randmin, randnum);
                             }
                             spaces[j] = (int) rand() % LINES + 1;
                         }
                     } else if (random > highnum && matrix[1][j].val != 1) {
                         matrix[0][j].val = ' ';
                     } else {
-                        matrix[0][j].val = randomchar(randnum, randmin, customcharset);
+                        matrix[0][j].val = get_matrix_char_for_col(j, randmin, randnum);
                     }
 
                 } else { /* New style scrolling (default) */
@@ -716,7 +745,7 @@ if (console) {
                     } else if (matrix[0][j].val == -1
                         && matrix[1][j].val == ' ') {
                         length[j] = (int) rand() % (LINES - 3) + 3;
-                        matrix[0][j].val = randomchar(randnum, randmin, customcharset);
+                        matrix[0][j].val = get_matrix_char_for_col(j, randmin, randnum);
 
                         spaces[j] = (int) rand() % LINES + 1;
                     }
@@ -743,7 +772,7 @@ if (console) {
                             matrix[i][j].is_head = false;
                             if (changes) {
                                 if (rand() % 8 == 0)
-                                    matrix[i][j].val = randomchar(randnum, randmin, customcharset);
+                                    matrix[i][j].val = get_matrix_char_for_col(j, randmin, randnum);
                             }
                             i++;
                             y++;
@@ -754,7 +783,7 @@ if (console) {
                             continue;
                         }
 
-                        matrix[i][j].val = randomchar(randnum, randmin, customcharset);
+                        matrix[i][j].val = get_matrix_char_for_col(j, randmin, randnum);
                         matrix[i][j].is_head = true;
 
                         /* If we're at the top of the column and it's reached its
